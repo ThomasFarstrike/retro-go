@@ -207,6 +207,11 @@ bool rg_input_read_gamepad_raw(uint32_t *out)
     }
 #endif
 
+    if (state & RG_KEY_START && state & RG_KEY_SELECT) {
+        RG_LOGW("START and SELECT pressed at the same time, booting into main OS");
+        rg_boot_main_os();
+    }
+
     if (out)
         *out = state;
     return true;

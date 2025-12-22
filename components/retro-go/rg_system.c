@@ -942,6 +942,11 @@ void rg_system_switch_app(const char *partition, const char *name, const char *a
 {
     RG_LOGI("Switching to app %s (%s)", partition ?: "-", name ?: "-");
 
+    if (partition == RG_APP_FACTORY) {
+        RG_LOGW("This device has no factory partition, booting into main OS.");
+        rg_boot_main_os();
+    }
+
     if (update_boot_config(partition, name, args, save_slot, flags))
         rg_system_restart();
 

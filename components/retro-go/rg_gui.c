@@ -2162,7 +2162,7 @@ void rg_gui_debug_menu(void)
         {0x000, "Blit time ", frame_time,   RG_DIALOG_FLAG_NORMAL, NULL},
         {0x000, "Overclock",  overclock,    RG_DIALOG_FLAG_NORMAL, NULL},
         RG_DIALOG_SEPARATOR,
-        {0x001, "Reboot to firmware",   NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        {0x001, "Reboot to main OS",    NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x002, "Clear cache    ",      NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x003, "Save screenshot",      NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x004, "Save trace",           NULL, RG_DIALOG_FLAG_NORMAL, NULL},

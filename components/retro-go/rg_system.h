@@ -34,6 +34,7 @@ extern "C" {
 #include "rg_gui.h"
 #include "rg_i2c.h"
 #include "rg_utils.h"
+#include "rg_boot_main_os.h"
 
 #ifdef RG_ENABLE_NETPLAY
 #include "rg_netplay.h"

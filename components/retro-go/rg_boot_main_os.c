@@ -61,7 +61,7 @@ void rg_boot_main_os() {
         RG_LOGW("read_nvs_boot_partition got ota_slot == 1 so finding partition with label 'ota_1'");
         label = "ota_1";
     } else {
-        RG_LOGW("read_nvs_boot_partition returned %d instead of 0 or 1, defaulting to 0...", (int)ota_slot);
+        RG_LOGW("read_nvs_boot_partition returned %d", (int)ota_slot);
     }
 
     const esp_partition_t * next_update_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, label);
@@ -73,12 +73,9 @@ void rg_boot_main_os() {
     if (err != ESP_OK)
         RG_LOGE("esp_ota_set_boot_partition returned error %d, booting Fri3d App might not work!", err);
 
-    rg_storage_deinit(); // Properly unmount storage to sync changes and avoid corruption
-
     RG_LOGI("Restarting...");
-    rg_system_restart();
+    rg_system_restart(); // will do a clean shutdown (unmounting filesystem etc)
 #else
     RG_LOGW("Booting Fri3d App is only supported on the ESP!");
 #endif
 }
-

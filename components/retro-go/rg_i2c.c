@@ -10,6 +10,7 @@
 #endif
 
 static bool i2c_initialized = false;
+static int64_t i2c_last_read_us = 0;
 
 #define TRY(x)                 \
     if ((err = (x)) != ESP_OK) \
@@ -67,6 +68,14 @@ bool rg_i2c_read(uint8_t addr, int reg, void *read_data, size_t read_len)
     if (!cmd || !i2c_initialized)
         goto fail;
 
+    if (i2c_last_read_us != 0)
+    {
+        int64_t now = rg_system_timer();
+        int64_t delta = now - i2c_last_read_us;
+        if (delta < 10000)
+            rg_usleep((uint32_t)(10000 - delta));
+    }
+
     if (reg >= 0)
     {
         TRY(i2c_master_start(cmd));
@@ -79,10 +88,12 @@ bool rg_i2c_read(uint8_t addr, int reg, void *read_data, size_t read_len)
     TRY(i2c_master_stop(cmd));
     TRY(i2c_master_cmd_begin(I2C_NUM_0, cmd, pdMS_TO_TICKS(500)));
     i2c_cmd_link_delete(cmd);
+    i2c_last_read_us = rg_system_timer();
     return true;
 fail:
     i2c_cmd_link_delete(cmd);
     RG_LOGE("Read from 0x%02X failed. reg=0x%02X, err=0x%03X, init=%d\n", addr, reg, err, i2c_initialized);
+    i2c_last_read_us = rg_system_timer();
 #endif
     return false;
 }
@@ -181,6 +192,15 @@ static const _gpio_sequence gpio_init_seq[] = {};
 static const _gpio_sequence gpio_deinit_seq[] = {};
 static rg_gpio_mode_t PCF857x_mode = -1;
 
+#elif RG_I2C_GPIO_DRIVER == 6 // CH32X035 (Fri3D 2026 expander)
+
+static const _gpio_port gpio_ports[] = {
+    {0x04, -1, -1, -1}, // PORT 0 (button states low byte)
+    {0x05, -1, -1, -1}, // PORT 1 (button states high byte)
+};
+static const _gpio_sequence gpio_init_seq[] = {};
+static const _gpio_sequence gpio_deinit_seq[] = {};
+
 #else
 
 #error "Unknown I2C GPIO Extender driver type!"
@@ -258,6 +278,10 @@ bool rg_i2c_gpio_configure_port(int port, uint8_t mask, rg_gpio_mode_t mode)
         return rg_i2c_write(gpio_address, -1, &temp, gpio_ports_count)
             && rg_i2c_read(gpio_address, -1, &temp, gpio_ports_count);
     return rg_i2c_write(gpio_address, -1, &gpio_output_values, gpio_ports_count);
+#elif RG_I2C_GPIO_DRIVER == 6 // CH32X035 (Fri3D 2026 expander)
+    (void)mask;
+    (void)mode;
+    return true;
 #else
     int direction_reg = gpio_ports[port].direction_reg;
     int pullup_reg = gpio_ports[port].pullup_reg;
@@ -274,6 +298,9 @@ int rg_i2c_gpio_read_port(int port)
 #if RG_I2C_GPIO_DRIVER == 4 || RG_I2C_GPIO_DRIVER == 5 // PCF8575/PCF8574
     uint8_t values[gpio_ports_count];
     return rg_i2c_read(gpio_address, -1, &values, gpio_ports_count) ? values[port] : -1;
+#elif RG_I2C_GPIO_DRIVER == 6 // CH32X035 (Fri3D 2026 expander)
+    uint8_t values[2];
+    return rg_i2c_read(gpio_address, gpio_ports[0].input_reg, &values, sizeof(values)) ? values[port] : -1;
 #else
     return rg_i2c_read_byte(gpio_address, gpio_ports[port].input_reg);
 #endif
@@ -288,6 +315,9 @@ bool rg_i2c_gpio_write_port(int port, uint8_t value)
     if (PCF857x_mode != RG_GPIO_OUTPUT)
         return true; // This is consistent with other extenders, where the output latch is updated even in input mode
     return rg_i2c_write(gpio_address, -1, &gpio_output_values, gpio_ports_count);
+#elif RG_I2C_GPIO_DRIVER == 6 // CH32X035 (Fri3D 2026 expander)
+    (void)value;
+    return true; // outputs are controlled via dedicated registers, not a GPIO latch
 #else
     return rg_i2c_write_byte(gpio_address, gpio_ports[port].output_reg, value);
 #endif

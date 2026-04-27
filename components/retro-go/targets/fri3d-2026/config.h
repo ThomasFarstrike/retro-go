@@ -25,9 +25,9 @@
 #define RG_SCREEN_HOST              SPI2_HOST
 #define RG_SCREEN_SPEED             SPI_MASTER_FREQ_40M
 #define RG_SCREEN_BACKLIGHT         0
-#define RG_SCREEN_WIDTH             240
-#define RG_SCREEN_HEIGHT            320
-#define RG_SCREEN_ROTATION          1   // Possible values are 0-7 (you'll have to experiment)
+#define RG_SCREEN_WIDTH             320
+#define RG_SCREEN_HEIGHT            240
+#define RG_SCREEN_ROTATION          0   // Possible values are 0-7 (you'll have to experiment) - not 1, 2
 #define RG_SCREEN_RGB_BGR           1   // Possible values are 0-1 (change if colors are bad)
 #define RG_SCREEN_PIXEL_FORMAT      0   // Possible values are 0=565_BE, 1=565_LE
 #define RG_SCREEN_VISIBLE_AREA      {0, 0, 0, 0}  // Left, Top, Right, Bottom
@@ -62,9 +62,18 @@
     {RG_KEY_START,  .num = GPIO_NUM_0,  .pullup = 1, .level = 0},\
 }
 
-// Status LED (NeoPixel data)
-#define RG_GPIO_LED                 GPIO_NUM_12
-
+// CH32 expander button states (context/badge_2026_fw/README.md). Ignore USB/charger bits.
+#define RG_GAMEPAD_I2C_MAP {\
+    {RG_KEY_RIGHT,  .num = 10, .level = 1},\
+    {RG_KEY_LEFT,   .num = 9,  .level = 1},\
+    {RG_KEY_DOWN,   .num = 8,  .level = 1},\
+    {RG_KEY_UP,     .num = 7,  .level = 1},\
+    {RG_KEY_MENU,   .num = 6,  .level = 1},\
+    {RG_KEY_B,      .num = 5,  .level = 1},\
+    {RG_KEY_A,      .num = 4,  .level = 1},\
+    {RG_KEY_Y,      .num = 3,  .level = 1},\
+    {RG_KEY_X,      .num = 2,  .level = 1},\
+}
 
 // Battery (CH32 expander-backed ADC not wired yet in C)
 #define RG_BATTERY_DRIVER           1
@@ -80,6 +89,8 @@
 // I2C BUS (CH32 expander)
 #define RG_GPIO_I2C_SDA             GPIO_NUM_39
 #define RG_GPIO_I2C_SCL             GPIO_NUM_42
+#define RG_I2C_GPIO_DRIVER          6   // CH32X035 expander (Fri3D 2026)
+#define RG_I2C_GPIO_ADDR            0x50
 
 // SPI Display
 #define RG_GPIO_LCD_MISO            GPIO_NUM_8

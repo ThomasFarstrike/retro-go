@@ -12,6 +12,18 @@
 static bool i2c_initialized = false;
 static int64_t i2c_last_read_us = 0;
 
+#if defined(RG_I2C_GPIO_DRIVER) && RG_I2C_GPIO_DRIVER == 6
+static void rg_i2c_wait_ch32_ready(void)
+{
+    int64_t now = rg_system_timer();
+    if (now < 1000000)
+    {
+        RG_LOGW("CH32 expander not ready (uptime=%lldus), waiting for 1s...", (long long)now);
+        rg_task_delay((uint32_t)((1000000 - now) / 1000 + 1));
+    }
+}
+#endif
+
 #define TRY(x)                 \
     if ((err = (x)) != ESP_OK) \
     {                          \
@@ -68,6 +80,10 @@ bool rg_i2c_read(uint8_t addr, int reg, void *read_data, size_t read_len)
     if (!cmd || !i2c_initialized)
         goto fail;
 
+#if defined(RG_I2C_GPIO_DRIVER) && RG_I2C_GPIO_DRIVER == 6
+    rg_i2c_wait_ch32_ready();
+#endif
+
     if (i2c_last_read_us != 0)
     {
         int64_t now = rg_system_timer();
@@ -106,6 +122,10 @@ bool rg_i2c_write(uint8_t addr, int reg, const void *write_data, size_t write_le
 
     if (!cmd || !i2c_initialized)
         goto fail;
+
+#if defined(RG_I2C_GPIO_DRIVER) && RG_I2C_GPIO_DRIVER == 6
+    rg_i2c_wait_ch32_ready();
+#endif
 
     TRY(i2c_master_start(cmd));
     TRY(i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true));

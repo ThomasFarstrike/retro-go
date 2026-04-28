@@ -11,8 +11,8 @@
 
 // Storage
 #define RG_STORAGE_ROOT             "/sd"
-//#define RG_STORAGE_SDSPI_HOST       SPI2_HOST
-//#define RG_STORAGE_SDSPI_SPEED      SDMMC_FREQ_DEFAULT
+#define RG_STORAGE_SDSPI_HOST       SPI2_HOST
+#define RG_STORAGE_SDSPI_SPEED      SDMMC_FREQ_DEFAULT
 #define RG_STORAGE_FLASH_PARTITION  "vfs"
 
 // Audio
@@ -48,13 +48,7 @@
     ILI9341_CMD(0xF6, 0x01, 0x30);                                                                               \
     ILI9341_CMD(0xF2, 0x00);                 /* 3Gamma Function Disable */                                       \
     ILI9341_CMD(0xE0, 0xD0, 0x00, 0x05, 0x0E, 0x15, 0x0D, 0x37, 0x43, 0x47, 0x09, 0x15, 0x12, 0x16, 0x19);       \
-    ILI9341_CMD(0xE1, 0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19);       \
-    rg_i2c_init();                                                                                                \
-    rg_task_delay(10);                                                                                            \
-    rg_i2c_write_byte(0x50, 22, 0x01); /* 3v3 aux on + LCD off */                                               \
-    rg_task_delay(200);                                                                                           \
-    rg_i2c_write_byte(0x50, 22, 0x03); /* 3v3 aux + LCD on */
-
+    ILI9341_CMD(0xE1, 0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19);
 
 // Fri3D 2026 buttons are mainly on the CH32 expander; only START is direct on GPIO0 for now.
 #define RG_RECOVERY_BTN RG_KEY_START // Keep this button pressed to open the recovery menu
@@ -76,15 +70,8 @@
 }
 
 // Battery (CH32 expander-backed ADC not wired yet in C)
-#define RG_BATTERY_DRIVER           1
-#define RG_BATTERY_ADC_UNIT         ADC_UNIT_2
-#define RG_BATTERY_ADC_CHANNEL      ADC_CHANNEL_2
-// Battery voltage ranges from 3.15V (0%) to 4.15 (100%) as datasheet specifies
-// 3.0 +/- 0.1V (discharge cut-off) to 4.2V (no margin of error provided, assuming 0.05V)
-// Charger stops charging at 4.07V (92%) to reduce battery wear.
-#define RG_BATTERY_CALC_PERCENT(raw) (((raw) * 2.f - 3150.f) / (4150.f - 3150.f) * 100.f)
-#define RG_BATTERY_CALC_VOLTAGE(raw) ((raw) * 2.f * 0.001f)
-
+#define RG_BATTERY_DRIVER           0
+#define RG_BATTERY_ADC_UNIT         -1 // disabled
 
 // I2C BUS (CH32 expander)
 #define RG_GPIO_I2C_SDA             GPIO_NUM_39
@@ -98,15 +85,13 @@
 #define RG_GPIO_LCD_CLK             GPIO_NUM_7
 #define RG_GPIO_LCD_CS              GPIO_NUM_5
 #define RG_GPIO_LCD_DC              GPIO_NUM_4
-#define RG_GPIO_LCD_RST             GPIO_NUM_NC
+//#define RG_GPIO_LCD_RST             GPIO_NUM_NC // CH32 coprocessor does the reset
 
-/*
 // SPI SD Card
 #define RG_GPIO_SDSPI_MISO          RG_GPIO_LCD_MISO
 #define RG_GPIO_SDSPI_MOSI          RG_GPIO_LCD_MOSI
 #define RG_GPIO_SDSPI_CLK           RG_GPIO_LCD_CLK
 #define RG_GPIO_SDSPI_CS            GPIO_NUM_14
-*/
 
 // External I2S DAC
 #define RG_GPIO_SND_I2S_BCK         GPIO_NUM_10

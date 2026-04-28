@@ -51,12 +51,17 @@
     ILI9341_CMD(0xE1, 0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19);
 
 // Fri3D 2026 buttons are mainly on the CH32 expander; only START is direct on GPIO0 for now.
-#define RG_RECOVERY_BTN RG_KEY_START // Keep this button pressed to open the recovery menu
+// RG_KEY_START is labelled START on the PCB
 #define RG_GAMEPAD_GPIO_MAP {\
     {RG_KEY_START,  .num = GPIO_NUM_0,  .pullup = 1, .level = 0},\
 }
 
 // CH32 expander button states (context/badge_2026_fw/README.md). Ignore USB/charger bits.
+// RG_KEY_MENU is labelled MENU on the PCB
+// RG_KEY_OPTION is labelled Y on the PCB
+// RG_KEY_SELECT is labelled X on the PCB
+// RG_KEY_A is labelled A on the PCB
+// RG_KEY_B is labelled B on the PCB
 #define RG_GAMEPAD_I2C_MAP {\
     {RG_KEY_RIGHT,  .num = 10, .level = 1},\
     {RG_KEY_LEFT,   .num = 9,  .level = 1},\
@@ -65,9 +70,13 @@
     {RG_KEY_MENU,   .num = 6,  .level = 1},\
     {RG_KEY_B,      .num = 5,  .level = 1},\
     {RG_KEY_A,      .num = 4,  .level = 1},\
-    {RG_KEY_Y,      .num = 3,  .level = 1},\
-    {RG_KEY_X,      .num = 2,  .level = 1},\
+    {RG_KEY_OPTION, .num = 3,  .level = 1},\
+    {RG_KEY_SELECT, .num = 2,  .level = 1},\
 }
+
+// Not using RG_KEY_START because long pressing that one has a special meaning in Duke3D:
+#define RG_RECOVERY_BTN RG_KEY_MENU // Keep this button pressed to open the recovery menu
+
 
 // Battery (CH32 expander-backed ADC not wired yet in C)
 #define RG_BATTERY_DRIVER           0

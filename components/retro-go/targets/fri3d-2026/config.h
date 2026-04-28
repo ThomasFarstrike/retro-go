@@ -102,7 +102,17 @@
 #define RG_GPIO_SDSPI_CLK           RG_GPIO_LCD_CLK
 #define RG_GPIO_SDSPI_CS            GPIO_NUM_14
 
-// External I2S DAC
-#define RG_GPIO_SND_I2S_BCK         GPIO_NUM_2
+/*
+// Headphone I2S DAC
+#define RG_GPIO_SND_I2S_MCK         GPIO_NUM_2
+#define RG_GPIO_SND_I2S_BCK         GPIO_NUM_17 // also known as SCLK
 #define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
+*/
+
+// External I2S DAC
+#define RG_GPIO_SND_I2S_MCK         GPIO_NUM_NC // not needed
+#define RG_GPIO_SND_I2S_BCK         GPIO_NUM_2  // also known as SCLK
+#define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
+#define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
+

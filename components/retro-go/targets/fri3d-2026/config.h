@@ -23,6 +23,9 @@
 // Video
 #define RG_SCREEN_DRIVER            0   // 0 = ILI9341/ST7789
 #define RG_SCREEN_HOST              SPI2_HOST
+// Frequencies: ./components/esp_driver_spi/include/driver/spi_master.h which defines 8,9,10,11,13,16,20,26,40,80 Mhz
+// Low clock frequency (10Mhz) is bad for framerate
+// 40-80Mhz: 21-51 FPS, 34.5 during welcome screen of Duke3D
 #define RG_SCREEN_SPEED             SPI_MASTER_FREQ_40M
 #define RG_SCREEN_BACKLIGHT         0
 #define RG_SCREEN_WIDTH             320
@@ -116,3 +119,9 @@
 #define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
 
+#define RG_CUSTOM_PLATFORM_INIT()   \
+    RG_LOGW("Waiting for CH32 coprocessor/expander to finish booting..."); \
+    rg_task_delay(1000); \
+    RG_LOGW("Allowing some time for serial debug console to connect..."); \
+    rg_task_delay(5000); \
+    RG_LOGW("Done waiting.");

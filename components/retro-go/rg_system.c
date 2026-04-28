@@ -455,11 +455,6 @@ rg_app_t *rg_system_init(const rg_config_t *config)
     printf("========================================================\n\n");
     update_memory_statistics(); // Do this early in case any of our init routines needs to know
 
-#if defined(RG_I2C_GPIO_DRIVER) && (RG_I2C_GPIO_DRIVER == 6)
-    RG_LOGW("Waiting for CH32 coprocessor/expander to finish booting...");
-    rg_task_delay(1000);
-#endif
-
 #ifdef RG_I2C_GPIO_DRIVER
     rg_i2c_init();
     rg_i2c_gpio_init();

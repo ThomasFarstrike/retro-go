@@ -1,5 +1,6 @@
 #include "rg_system.h"
 #include "rg_input.h"
+#include "rg_boot_fri3d_app.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -298,6 +299,25 @@ bool rg_input_read_gamepad_raw(uint32_t *out)
     return true;
 }
 
+static void check_fri3d_boot_combo(uint32_t state)
+{
+    static bool combo_armed = true;
+
+    const bool pressed = (state & (RG_KEY_START | RG_KEY_MENU)) == (RG_KEY_START | RG_KEY_MENU);
+    const bool any_pressed = (state & (RG_KEY_START | RG_KEY_MENU)) != 0;
+
+    if (pressed && combo_armed)
+    {
+        combo_armed = false;
+        RG_LOGW("START+MENU pressed, booting Fri3d App.");
+        rg_boot_fri3d_app();
+    }
+    else if (!any_pressed)
+    {
+        combo_armed = true;
+    }
+}
+
 static void input_task(void *arg)
 {
     uint8_t debounce[RG_KEY_COUNT];
@@ -328,6 +348,7 @@ static void input_task(void *arg)
                 }
             }
             gamepad_state = local_gamepad_state;
+            check_fri3d_boot_combo(gamepad_state);
         }
 
         if (rg_system_timer() >= next_battery_update)

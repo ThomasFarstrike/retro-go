@@ -10,7 +10,6 @@
 #endif
 
 static bool i2c_initialized = false;
-static int64_t i2c_last_read_us = 0;
 
 #if defined(RG_I2C_GPIO_DRIVER) && RG_I2C_GPIO_DRIVER == 6
 static void rg_i2c_wait_ch32_ready(void)
@@ -84,14 +83,6 @@ bool rg_i2c_read(uint8_t addr, int reg, void *read_data, size_t read_len)
     rg_i2c_wait_ch32_ready();
 #endif
 
-    if (i2c_last_read_us != 0)
-    {
-        int64_t now = rg_system_timer();
-        int64_t delta = now - i2c_last_read_us;
-        if (delta < 10000)
-            rg_usleep((uint32_t)(10000 - delta));
-    }
-
     if (reg >= 0)
     {
         TRY(i2c_master_start(cmd));
@@ -104,12 +95,10 @@ bool rg_i2c_read(uint8_t addr, int reg, void *read_data, size_t read_len)
     TRY(i2c_master_stop(cmd));
     TRY(i2c_master_cmd_begin(I2C_NUM_0, cmd, pdMS_TO_TICKS(500)));
     i2c_cmd_link_delete(cmd);
-    i2c_last_read_us = rg_system_timer();
     return true;
 fail:
     i2c_cmd_link_delete(cmd);
     RG_LOGE("Read from 0x%02X failed. reg=0x%02X, err=0x%03X, init=%d\n", addr, reg, err, i2c_initialized);
-    i2c_last_read_us = rg_system_timer();
 #endif
     return false;
 }

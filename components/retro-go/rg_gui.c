@@ -1,5 +1,6 @@
 #include "rg_system.h"
 #include "rg_gui.h"
+#include "rg_boot_fri3d_app.h"
 
 #include <cJSON.h>
 #include <math.h>
@@ -2162,13 +2163,14 @@ void rg_gui_debug_menu(void)
         {0x000, "Blit time ", frame_time,   RG_DIALOG_FLAG_NORMAL, NULL},
         {0x000, "Overclock",  overclock,    RG_DIALOG_FLAG_NORMAL, NULL},
         RG_DIALOG_SEPARATOR,
-        {0x001, "Reboot to firmware",   NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        //{0x001, "Reboot to firmware",   NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x002, "Clear cache    ",      NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x003, "Save screenshot",      NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x004, "Save trace",           NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x005, "Cheats    ",           NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x006, "Crash     ",           NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {0x007, "Log=debug ",           NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        {0x008, "To MicroPythonOS (MENU+START)", NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         RG_DIALOG_END
     };
 
@@ -2237,6 +2239,9 @@ void rg_gui_debug_menu(void)
         break;
     case 0x007:
         rg_system_set_log_level(RG_LOG_DEBUG);
+        break;
+    case 0x008:
+        rg_boot_fri3d_app();
         break;
     case 0x100:
         rg_display_clear(C_BLACK);

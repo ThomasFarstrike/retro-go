@@ -1,4 +1,5 @@
 #include "rg_system.h"
+#include "rg_boot_fri3d_app.h"
 
 #include <sys/time.h>
 #include <stdarg.h>
@@ -344,8 +345,9 @@ static void enter_recovery_mode(void)
     // FIXME: At this point we don't have valid settings, we should find way to get the user's language...
     const rg_gui_option_t options[] = {
         {0, _("Reset all settings"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
-        {1, _("Reboot to factory "), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
-        {2, _("Reboot to launcher"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        //{1, _("Reboot to factory "), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        //{2, _("Reboot to launcher"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        {3, _("To MicroPythonOS (MENU+START)"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         RG_DIALOG_END,
     };
     while (true)
@@ -361,6 +363,9 @@ static void enter_recovery_mode(void)
         case 2:
         default:
             rg_system_exit();
+        case 3:
+            rg_boot_fri3d_app();
+            break;
         }
     }
 }

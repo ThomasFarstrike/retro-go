@@ -8104,7 +8104,17 @@ int dukeGRP_Match(char* filename,int length)
 
 #include <dirent.h>
 void findGRPToUse(char * groupfilefullpath){
-    strcpy(groupfilefullpath,"/sd/roms/duke3d/duke3d.grp");
+    const rg_app_t *app = rg_system_get_app();
+
+    if (app && app->romPath && app->romPath[0] != '\0')
+    {
+        snprintf(groupfilefullpath, 512, "%s", app->romPath);
+        RG_LOGI("Using Duke3D GRP from boot config: %s", groupfilefullpath);
+        return;
+    }
+
+    snprintf(groupfilefullpath, 512, "%s", "/sd/roms/duke3d/duke3d.grp");
+    RG_LOGW("No ROM in boot config, falling back to: %s", groupfilefullpath);
 }
 
 #endif

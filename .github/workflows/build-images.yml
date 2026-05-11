@@ -58,7 +58,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          sudo chown -R $(whoami) {launcher,retro-core,prboom-go}/build
+          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go}/build
           mv launcher/build/launcher.bin retro_go_launcher_2024.bin
           mv retro-core/build/retro-core.bin retro_go_core_2024.bin
           mv prboom-go/build/prboom-go.bin retro_go_prboom_2024.bin
@@ -91,7 +91,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          sudo chown -R $(whoami) {launcher,retro-core,prboom-go}/build
+          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go}/build
           mv launcher/build/launcher.bin retro_go_launcher_2026.bin
           mv retro-core/build/retro-core.bin retro_go_core_2026.bin
           mv prboom-go/build/prboom-go.bin retro_go_prboom_2026.bin

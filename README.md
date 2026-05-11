@@ -1,3 +1,5 @@
+This branch builds retro-go for the Fri3d 2024 and 2026 Badges, including duke3d-go, Duke Nukem 3D for retro-go.
+
 # Table of contents
 - [Description](#description)
 - [Installation](#installation)

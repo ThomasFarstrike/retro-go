@@ -26,15 +26,45 @@ int32_t read_nvs_boot_partition() {
         goto cleanup_nothing;
     }
 
-    // Open NVS partition 'fri3d.sys'
+    // Open NVS namespace 'fri3d.sys' in read-only mode
     ret = nvs_open("fri3d.sys", NVS_READONLY, &my_handle);
-    if (ret != ESP_OK) {
-        printf("Failed to open NVS partition: %s\n", esp_err_to_name(ret));
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        printf("NVS namespace 'fri3d.sys' does not exist yet, creating with default boot_partition=0\n");
+
+        // Create the namespace and default key/value
+        ret = nvs_open("fri3d.sys", NVS_READWRITE, &my_handle);
+        if (ret != ESP_OK) {
+            printf("Failed to create NVS namespace 'fri3d.sys': %s\n", esp_err_to_name(ret));
+            goto cleanup_nothing;
+        }
+
+        boot_id = 0;
+        ret = nvs_set_i32(my_handle, "boot_partition", boot_id);
+        if (ret != ESP_OK) {
+            printf("Failed to set default 'boot_partition': %s\n", esp_err_to_name(ret));
+            goto close_nvs;
+        }
+
+        ret = nvs_commit(my_handle);
+        if (ret != ESP_OK) {
+            printf("Failed to commit default 'boot_partition': %s\n", esp_err_to_name(ret));
+            goto close_nvs;
+        }
+
+        printf("Created NVS namespace 'fri3d.sys' with default boot_partition=%d\n", (int)boot_id);
+        goto close_nvs;
+    } else if (ret != ESP_OK) {
+        printf("Failed to open NVS namespace 'fri3d.sys': %s\n", esp_err_to_name(ret));
         goto cleanup_nothing;
     }
 
     // Get the value of 'boot_partition' from NVS
     ret = nvs_get_i32(my_handle, "boot_partition", &boot_id);
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        boot_id = 0;
+        printf("'boot_partition' not found, defaulting to %d\n", (int)boot_id);
+        goto close_nvs;
+    }
     if (ret != ESP_OK) {
         printf("Failed to read 'boot_partition': %s\n", esp_err_to_name(ret));
         goto close_nvs;

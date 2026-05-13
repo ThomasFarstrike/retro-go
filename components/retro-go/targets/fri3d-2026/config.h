@@ -60,12 +60,17 @@
     {RG_KEY_START,  .num = GPIO_NUM_0,  .pullup = 1, .level = 0},\
 }
 
+
+// Not using RG_KEY_START because long pressing that one has a special meaning in Duke3D:
+#define RG_RECOVERY_BTN RG_KEY_MENU // Keep this button pressed to open the recovery menu
+
 // CH32 expander button states (context/badge_2026_fw/README.md). Ignore USB/charger bits.
-// RG_KEY_MENU is labelled MENU on the PCB
-// RG_KEY_OPTION is labelled Y on the PCB
-// RG_KEY_SELECT is labelled X on the PCB
-// RG_KEY_A is labelled A on the PCB
-// RG_KEY_B is labelled B on the PCB
+// PCB labels:
+// 6: MENU
+// 3: Y
+// 2: X
+// 4: A
+// 5: B
 #define RG_GAMEPAD_I2C_MAP {\
     {RG_KEY_RIGHT,  .num = 10, .level = 1},\
     {RG_KEY_LEFT,   .num = 9,  .level = 1},\
@@ -78,8 +83,6 @@
     {RG_KEY_SELECT, .num = 2,  .level = 1},\
 }
 
-// Not using RG_KEY_START because long pressing that one has a special meaning in Duke3D:
-#define RG_RECOVERY_BTN RG_KEY_MENU // Keep this button pressed to open the recovery menu
 
 
 // Battery (CH32 expander-backed ADC not wired yet in C)

@@ -5,13 +5,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// Duke3D stack usage peaked at ~36KB in testing. We use 48KB in Internal DRAM for ESP32.
-// S3/P4 use the original 144KB in PSRAM.
-#if CONFIG_IDF_TARGET_ESP32
+// Duke3D stack usage peaked at ~36KB in testing. Use 48KB in Internal DRAM.
+// Must use MEM_FAST (internal DRAM) so that SPI flash cache disable operations
+// work correctly when using LittleFS on internal storage (no SD card).
 #define DUKE_STACK_SIZE (48 * 1024)
-#else
-#define DUKE_STACK_SIZE (144 * 1024)
-#endif
 
 static TaskHandle_t duke_task_handle = NULL;
 // Flag to signal Core 0 that Core 1 has finished cleanup and is ready for reboot
@@ -166,13 +163,7 @@ void app_main(void)
     RG_LOGI("app_main: Spawning Duke3D task...");
     
     static StaticTask_t duke_task_buffer;
-    void *stack_ptr = NULL;
-
-#if CONFIG_IDF_TARGET_ESP32
-    stack_ptr = rg_alloc(DUKE_STACK_SIZE, MEM_FAST); // Force Internal DRAM
-#else
-    stack_ptr = rg_alloc(DUKE_STACK_SIZE, MEM_SLOW); // S3/P4 can stay in PSRAM
-#endif
+    void *stack_ptr = rg_alloc(DUKE_STACK_SIZE, MEM_FAST);
 
     if (!stack_ptr) {
         RG_LOGE("Failed to allocate %dKB stack!", DUKE_STACK_SIZE / 1024);

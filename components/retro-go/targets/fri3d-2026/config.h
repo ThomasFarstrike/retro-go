@@ -24,16 +24,13 @@
 // Video
 #define RG_SCREEN_DRIVER            0   // 0 = ILI9341/ST7789
 #define RG_SCREEN_HOST              SPI2_HOST
-// Frequencies: ./components/esp_driver_spi/include/driver/spi_master.h which defines 8,9,10,11,13,16,20,26,40,80 Mhz
-// Low clock frequency (10Mhz) is bad for framerate
-// 40-80Mhz: 21-51 FPS, 34.5 during welcome screen of Duke3D
-#define RG_SCREEN_SPEED             SPI_MASTER_FREQ_40M
+#define RG_SCREEN_SPEED             SPI_MASTER_FREQ_40M // Low clock frequency (10Mhz) is bad for framerate
 #define RG_SCREEN_BACKLIGHT         0
 #define RG_SCREEN_WIDTH             320
 #define RG_SCREEN_HEIGHT            240
-#define RG_SCREEN_ROTATION          0   // Possible values are 0-7 (you'll have to experiment) - not 1, 2
-#define RG_SCREEN_RGB_BGR           1   // Possible values are 0-1 (change if colors are bad)
-#define RG_SCREEN_PIXEL_FORMAT      0   // Possible values are 0=565_BE, 1=565_LE
+#define RG_SCREEN_ROTATION          0
+#define RG_SCREEN_RGB_BGR           1
+#define RG_SCREEN_PIXEL_FORMAT      0
 #define RG_SCREEN_VISIBLE_AREA      {0, 0, 0, 0}  // Left, Top, Right, Bottom
 #define RG_SCREEN_SAFE_AREA         {0, 0, 0, 0}  // Left, Top, Right, Bottom
 #define RG_SCREEN_INIT()                                                                                         \
@@ -55,7 +52,8 @@
     ILI9341_CMD(0xE1, 0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19);
 
 // Fri3D 2026 buttons are mainly on the CH32 expander; only START is direct on GPIO0 for now.
-// RG_KEY_START is labelled START on the PCB
+// PCB labels:
+// GPIO_NUM_0: S (for START)
 #define RG_GAMEPAD_GPIO_MAP {\
     {RG_KEY_START,  .num = GPIO_NUM_0,  .pullup = 1, .level = 0},\
 }
@@ -116,12 +114,13 @@
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
 
 /*
-// External I2S DAC
+// Communicator Add-On offers external I2S DAC but retro-go doesn't support 2 external DACs yet
 #define RG_GPIO_SND_I2S_BCK         GPIO_NUM_2  // also known as SCLK
 #define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
 */
 
+// The 5 second sleep is convenient for debugging, but might be removed later:
 #define RG_CUSTOM_PLATFORM_INIT()   \
     RG_LOGW("Waiting for CH32 coprocessor/expander to finish booting..."); \
     rg_task_delay(1000); \

@@ -50,7 +50,7 @@ jobs:
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.4
+          esp_idf_version: v5.5.1
           target: esp32s3
           command: ./rg_tool.py --target fri3d-2024 build launcher retro-core prboom-go duke3d-go
       - name: Upload binaries to draft release
@@ -83,7 +83,7 @@ jobs:
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.4
+          esp_idf_version: v5.5.1
           target: esp32s3
           command: ./rg_tool.py --target fri3d-2026 build launcher retro-core prboom-go duke3d-go
       - name: Upload binaries to draft release

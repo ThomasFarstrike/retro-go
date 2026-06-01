@@ -5016,8 +5016,12 @@ static void decodeGeneric(unsigned char** out, unsigned* w, unsigned* h,
 
   if(!state->error) {
     outsize = lodepng_get_raw_size(*w, *h, &state->info_png.color);
-    *out = (unsigned char*)lodepng_malloc(outsize);
-    if(!*out) state->error = 83; /*alloc fail*/
+    if(state->decoder.preallocated_out && outsize <= state->decoder.preallocated_out_size) {
+      *out = state->decoder.preallocated_out;
+    } else {
+      *out = (unsigned char*)lodepng_malloc(outsize);
+      if(!*out) state->error = 83; /*alloc fail*/
+    }
   }
   if(!state->error) {
     lodepng_memset(*out, 0, outsize);
@@ -5114,6 +5118,8 @@ unsigned lodepng_decode24_file(unsigned char** out, unsigned* w, unsigned* h, co
 
 void lodepng_decoder_settings_init(LodePNGDecoderSettings* settings) {
   settings->color_convert = 1;
+  settings->preallocated_out = NULL;
+  settings->preallocated_out_size = 0;
 #ifdef LODEPNG_COMPILE_ANCILLARY_CHUNKS
   settings->read_text_chunks = 1;
   settings->remember_unknown_chunks = 0;

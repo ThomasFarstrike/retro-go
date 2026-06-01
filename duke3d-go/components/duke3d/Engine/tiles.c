@@ -23,6 +23,17 @@ char  artfilename[20];
 static EXT_RAM_BSS_ATTR tile_t tiles_static[MAXTILES];
 tile_t *tiles = tiles_static;
 
+// Scratch buffers for PNG decode (max screen-size tile * 4 bytes per pixel).
+// Being EXT_RAM_BSS these cost no runtime malloc/free, eliminating the SPIRAM
+// heap fragmentation that lodepng's internal allocations would cause over
+// repeated tile loads.  Two buffers are needed: one for the native-format
+// decode output (lodepng's decodeGeneric alloc), and one for the RGBA
+// conversion output — they must coexist during lodepng_convert.
+#define PNGBUF_W 320
+#define PNGBUF_H 240
+EXT_RAM_BSS_ATTR static unsigned char png_native_scratch[PNGBUF_W * PNGBUF_H * 4];
+EXT_RAM_BSS_ATTR static unsigned char png_rgba_scratch[PNGBUF_W * PNGBUF_H * 4];
+
 int32_t numTiles;
 
 int32_t artversion;
@@ -30,6 +41,7 @@ int32_t artversion;
 uint8_t  *pic = NULL;
 
 EXT_RAM_BSS_ATTR uint8_t  gotpic[(MAXTILES+7)>>3];
+EXT_RAM_BSS_ATTR static uint8_t missingArtFallback[(MAXTILES+7)>>3];
 
 #define TILE_OVERRIDE_NAME_MAX 128
 #define MAX_ART_FILES_SCAN 1000
@@ -608,6 +620,86 @@ static uint8_t nearest_palette_index_cached(uint8_t r, uint8_t g, uint8_t b)
     return overridePalCacheValue[slot];
 }
 
+static uint32_t read_be32(const uint8_t *p)
+{
+    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
+}
+
+static unsigned parse_png_palette(const uint8_t *png, size_t png_size, uint8_t *out_rgba, unsigned *out_size)
+{
+    size_t pos;
+    unsigned i;
+    unsigned pal_size = 0;
+    int has_plte = 0;
+
+    if (!png || png_size < 8 || !out_rgba || !out_size)
+        return 0;
+
+    if (!(png[0] == 137 && png[1] == 80 && png[2] == 78 && png[3] == 71 &&
+          png[4] == 13  && png[5] == 10 && png[6] == 26 && png[7] == 10))
+        return 0;
+
+    for (i = 0; i < 256; ++i)
+    {
+        out_rgba[i * 4 + 0] = 0;
+        out_rgba[i * 4 + 1] = 0;
+        out_rgba[i * 4 + 2] = 0;
+        out_rgba[i * 4 + 3] = 255;
+    }
+
+    pos = 8;
+    while ((pos + 12) <= png_size)
+    {
+        uint32_t len = read_be32(png + pos);
+        const uint8_t *type = png + pos + 4;
+        const uint8_t *data = png + pos + 8;
+        size_t chunk_total = (size_t)len + 12u;
+
+        if (pos + chunk_total > png_size)
+            break;
+
+        if (type[0] == 'P' && type[1] == 'L' && type[2] == 'T' && type[3] == 'E')
+        {
+            if ((len % 3u) == 0)
+            {
+                unsigned entries = (unsigned)(len / 3u);
+                if (entries > 256u)
+                    entries = 256u;
+                for (i = 0; i < entries; ++i)
+                {
+                    out_rgba[i * 4 + 0] = data[i * 3 + 0];
+                    out_rgba[i * 4 + 1] = data[i * 3 + 1];
+                    out_rgba[i * 4 + 2] = data[i * 3 + 2];
+                }
+                pal_size = entries;
+                has_plte = 1;
+            }
+        }
+        else if (type[0] == 't' && type[1] == 'R' && type[2] == 'N' && type[3] == 'S')
+        {
+            if (has_plte)
+            {
+                unsigned entries = (unsigned)len;
+                if (entries > pal_size)
+                    entries = pal_size;
+                for (i = 0; i < entries; ++i)
+                {
+                    out_rgba[i * 4 + 3] = data[i];
+                }
+            }
+        }
+        else if (type[0] == 'I' && type[1] == 'E' && type[2] == 'N' && type[3] == 'D')
+        {
+            break;
+        }
+
+        pos += chunk_total;
+    }
+
+    *out_size = pal_size;
+    return has_plte ? 1u : 0u;
+}
+
 static int try_loadtile_from_override_png(short tilenume)
 {
     int32_t fileHandle;
@@ -648,8 +740,7 @@ static int try_loadtile_from_override_png(short tilenume)
         kclose(fileHandle);
         return 0;
     }
-
-    pngBytes = (uint8_t *)malloc((size_t)fileSize);
+    pngBytes = (uint8_t *)heap_caps_malloc((size_t)fileSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (pngBytes == NULL)
     {
         kclose(fileHandle);
@@ -664,15 +755,124 @@ static int try_loadtile_from_override_png(short tilenume)
     }
     kclose(fileHandle);
 
-    err = lodepng_decode32(&rgba, &width, &height, pngBytes, (size_t)fileSize);
-    free(pngBytes);
-    if (err != 0 || rgba == NULL)
-        return 0;
+    // Decode to native format into a pre-allocated static scratch buffer,
+    // avoiding lodepng's internal malloc for both the native-format output and
+    // the RGBA conversion output.  Two adjacent 300 KB buffers in PSRAM BSS
+    // ensure zero heap allocation for any tile up to 320x240.
+    {
+        unsigned ihdr_bitdepth = 0;
+        unsigned ihdr_colortype = 0;
+        uint8_t ihdr_palette[256 * 4];
+        unsigned ihdr_palette_size = 0;
+        int ihdr_has_palette = 0;
+        if (fileSize > 25)
+        {
+            ihdr_bitdepth = pngBytes[24];
+            ihdr_colortype = pngBytes[25];
+            if (ihdr_colortype == 3u)
+                ihdr_has_palette = (int)parse_png_palette(pngBytes, (size_t)fileSize, ihdr_palette, &ihdr_palette_size);
+        }
+
+        LodePNGState lpstate;
+        lodepng_state_init(&lpstate);
+        lpstate.decoder.color_convert = 0;
+        lpstate.decoder.preallocated_out = png_native_scratch;
+        lpstate.decoder.preallocated_out_size = sizeof(png_native_scratch);
+
+        unsigned char *native_data = NULL;
+        err = lodepng_decode(&native_data, &width, &height, &lpstate, pngBytes, (size_t)fileSize);
+        free(pngBytes);
+        if (err != 0)
+        {
+            lodepng_state_cleanup(&lpstate);
+            return 0;
+        }
+        if (native_data == NULL)
+        {
+            lodepng_state_cleanup(&lpstate);
+            return 0;
+        }
+
+        if (lpstate.info_png.color.bitdepth == 0 && ihdr_bitdepth != 0)
+            lpstate.info_png.color.bitdepth = ihdr_bitdepth;
+        if ((unsigned)lpstate.info_png.color.colortype > 6 && ihdr_colortype <= 6)
+            lpstate.info_png.color.colortype = (LodePNGColorType)ihdr_colortype;
+
+        size_t needed = (size_t)width * (size_t)height * 4;
+        if (needed > sizeof(png_rgba_scratch))
+        {
+            rgba = (unsigned char *)heap_caps_malloc(needed, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+            if (!rgba)
+            {
+                lodepng_state_cleanup(&lpstate);
+                return 0;
+            }
+            LodePNGColorMode rgba_mode;
+            lodepng_color_mode_init(&rgba_mode);
+            rgba_mode.colortype = LCT_RGBA;
+            rgba_mode.bitdepth = 8;
+            err = lodepng_convert(rgba, native_data, &rgba_mode, &lpstate.info_png.color, width, height);
+            lodepng_color_mode_cleanup(&rgba_mode);
+            if (err != 0)
+            {
+                free(rgba);
+                rgba = NULL;
+                lodepng_state_cleanup(&lpstate);
+                return 0;
+            }
+        }
+        else if (lpstate.info_png.color.colortype == LCT_RGBA && lpstate.info_png.color.bitdepth == 8)
+        {
+            // Native data is already RGBA — palette-convert directly from
+            // png_native_scratch, no RGBA conversion buffer needed.
+            rgba = native_data;  // == png_native_scratch
+        }
+        else if (ihdr_colortype == 3u && ihdr_bitdepth == 8u && ihdr_has_palette && ihdr_palette_size > 0u)
+        {
+            // Some builds report a corrupted in-memory colortype/bitdepth after
+            // decode (e.g. ct=0,bd=0) while IHDR is valid and native_data contains
+            // palette indices. Use IHDR+decoded palette directly to reconstruct RGBA.
+            const unsigned char *pal = ihdr_palette;
+            const unsigned palsz = ihdr_palette_size;
+            const size_t pixels = (size_t)width * (size_t)height;
+            size_t pi;
+            for (pi = 0; pi < pixels; ++pi)
+            {
+                const unsigned idx = native_data[pi];
+                const unsigned p = (idx < palsz ? idx : 0u) * 4u;
+                const size_t o = pi * 4u;
+                png_rgba_scratch[o + 0] = pal[p + 0];
+                png_rgba_scratch[o + 1] = pal[p + 1];
+                png_rgba_scratch[o + 2] = pal[p + 2];
+                png_rgba_scratch[o + 3] = pal[p + 3];
+            }
+            rgba = png_rgba_scratch;
+        }
+        else
+        {
+            // Native format is not RGBA: convert to RGBA into the second
+            // static scratch buffer, then palette-convert from there.
+            LodePNGColorMode rgba_mode;
+            lodepng_color_mode_init(&rgba_mode);
+            rgba_mode.colortype = LCT_RGBA;
+            rgba_mode.bitdepth = 8;
+            err = lodepng_convert(png_rgba_scratch, native_data, &rgba_mode,
+                                  &lpstate.info_png.color, width, height);
+            lodepng_color_mode_cleanup(&rgba_mode);
+            if (err != 0)
+            {
+                lodepng_state_cleanup(&lpstate);
+                return 0;
+            }
+            rgba = png_rgba_scratch;
+        }
+
+        lodepng_state_cleanup(&lpstate);
+    }
 
     if ((width == 0) || (height == 0) || (width > 32767) || (height > 32767) ||
         ((uint64_t)width * (uint64_t)height > 0x7fffffffULL))
     {
-        free(rgba);
         return 0;
     }
 
@@ -682,7 +882,6 @@ static int try_loadtile_from_override_png(short tilenume)
     if ((targetWidth <= 0) || (targetHeight <= 0) ||
         ((int64_t)targetWidth * (int64_t)targetHeight > 0x7fffffffLL))
     {
-        free(rgba);
         return 0;
     }
 
@@ -721,7 +920,7 @@ static int try_loadtile_from_override_png(short tilenume)
         allocache(&tiles[tilenume].data, pixelCount, (uint8_t *)&tiles[tilenume].lock);
         if (tiles[tilenume].data == NULL)
         {
-            free(rgba);
+            RG_LOGW("try_loadtile: tile %d allocache(%" PRId32 ") failed", tilenume, pixelCount);
             return 0;
         }
     }
@@ -743,17 +942,8 @@ static int try_loadtile_from_override_png(short tilenume)
         }
     }
 
-    {
-        static int overrideDecodeLogBudget = 128;
-        if (overrideDecodeLogBudget > 0)
-        {
-            overrideDecodeLogBudget--;
-            RG_LOGD("loadtile: decoded override tile %d from '%s' (png=%ux%u -> tile=%" PRId32 "x%" PRId32 ", %" PRId32 " px)",
-                   (int)tilenume, overrideFile, width, height, targetWidth, targetHeight, pixelCount);
-        }
-    }
-
-    free(rgba);
+    if (rgba != png_native_scratch && rgba != png_rgba_scratch)
+        free(rgba);
     return 1;
 }
 
@@ -846,7 +1036,6 @@ void loadtile(short tilenume)
 
 
 
-
     if ((uint32_t)tilenume >= (uint32_t)MAXTILES)
         return;
 
@@ -883,15 +1072,26 @@ void loadtile(short tilenume)
         artfil = TCkopen4load(artfilename,0);
 
         if (artfil == -1){
-            RG_LOGW("loadtile: missing artfile '%s' for tile %d (w=%d h=%d); synthesizing transparent fallback",
-                    artfilename, (int)tilenume,
-                    (int)tiles[tilenume].dim.width,
-                    (int)tiles[tilenume].dim.height);
+            const uint8_t missing_mask = (uint8_t)(1u << ((unsigned)tilenume & 7u));
+            if ((missingArtFallback[(unsigned)tilenume >> 3] & missing_mask) == 0)
+            {
+                missingArtFallback[(unsigned)tilenume >> 3] |= missing_mask;
+                RG_LOGW("loadtile: missing artfile '%s' for tile %d (w=%d h=%d); synthesizing transparent fallback",
+                        artfilename, (int)tilenume,
+                        (int)tiles[tilenume].dim.width,
+                        (int)tiles[tilenume].dim.height);
+            }
+
+            artfilnum = -1;  // Prevent subsequent tiles from using stale -1 handle
 
             if (tiles[tilenume].data == NULL)
             {
                 tiles[tilenume].lock = 199;
                 allocache(&tiles[tilenume].data, tileFilesize, (uint8_t  *) &tiles[tilenume].lock);
+            }
+            else
+            {
+                tiles[tilenume].lock = 199;
             }
 
             if (tiles[tilenume].data != NULL)
@@ -1063,10 +1263,11 @@ int loadpics(char  *filename, char * gamedir)
     prime_tile_override_metadata_from_png_headers();
 
     clearbuf(gotpic,(MAXTILES+31)>>5,0L);
+    clearbuf(missingArtFallback,(MAXTILES+31)>>5,0L);
 
-    // When the primary GRP is memory-backed (ZIP extracted to RAM), use a
-    // moderate cache floor to improve runtime reuse while staying memory-safe.
-    const int32_t min_cache_size = groupfile_primary_is_memory_backed() ? (512 * 1024) : (1024 * 1024);
+    // When the primary GRP is memory-backed (ZIP extracted to RAM), keep the
+    // cache floor conservative to leave enough PSRAM for lodepng workspace.
+    const int32_t min_cache_size = groupfile_primary_is_memory_backed() ? (256 * 1024) : (1024 * 1024);
     cachesize = max(artsize, min_cache_size);
     cachesize = (cachesize + 15) & ~15; // Align size to 16 bytes
 
@@ -1120,7 +1321,6 @@ int loadpics(char  *filename, char * gamedir)
 void TILE_MakeAvailable(short picID){
     if (tiles[picID].data == NULL)
         loadtile(picID);
-
 }
 
 void copytilepiece(int32_t tilenume1, int32_t sx1, int32_t sy1, int32_t xsiz, int32_t ysiz,

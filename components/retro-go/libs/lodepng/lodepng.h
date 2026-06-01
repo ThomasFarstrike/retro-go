@@ -738,6 +738,12 @@ typedef struct LodePNGDecoderSettings {
 
   unsigned color_convert; /*whether to convert the PNG to the color type you want. Default: yes*/
 
+  /* If non-NULL and large enough, decodeGeneric will write the native decoded
+     image here instead of allocating a new buffer, avoiding a malloc/free cycle
+     that can fragment the heap on constrained systems. */
+  unsigned char* preallocated_out;
+  size_t preallocated_out_size;
+
 #ifdef LODEPNG_COMPILE_ANCILLARY_CHUNKS
   unsigned read_text_chunks; /*if false but remember_unknown_chunks is true, they're stored in the unknown chunks*/
 

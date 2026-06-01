@@ -110,3 +110,10 @@
 #define RG_GPIO_SND_I2S_BCK         GPIO_NUM_2
 #define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
+
+// The 5 second sleep is convenient for debugging, and might be removed later:
+#define RG_CUSTOM_PLATFORM_INIT()   \
+    RG_LOGW("Allowing some time for serial debug console to connect..."); \
+    rg_task_delay(5000); \
+    RG_LOGW("Done waiting.");
+

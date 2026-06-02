@@ -96,6 +96,7 @@ static rg_task_t tasks[8];
 
 static const char *SETTING_BOOT_NAME = "BootName";
 static const char *SETTING_BOOT_ARGS = "BootArgs";
+static const char *SETTING_OVERCLOCK = "Overclock";
 static const char *SETTING_BOOT_FLAGS = "BootFlags";
 static const char *SETTING_TIMEZONE = "Timezone";
 static const char *SETTING_INDICATOR_MASK = "Indicators";
@@ -505,6 +506,10 @@ rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_u
     app.indicatorsMask = rg_settings_get_number(NS_GLOBAL, SETTING_INDICATOR_MASK, app.indicatorsMask);
     app.saveSlot = (app.bootFlags & RG_BOOT_SLOT_MASK) >> 4;
     app.romPath = app.bootArgs ?: ""; // For whatever reason some of our code isn't NULL-aware, sigh..
+
+    int saved_overclock = rg_settings_get_number(NS_GLOBAL, SETTING_OVERCLOCK, 0);
+    if (saved_overclock != 0)
+        rg_system_set_overclock(saved_overclock);
 
     rg_gui_draw_hourglass();
     rg_audio_init(sampleRate);
@@ -1184,6 +1189,8 @@ void rg_system_set_overclock(int level)
 
     overclockLevel = level;
     overclockMhz = real_mhz;
+
+    rg_settings_set_number(NS_GLOBAL, SETTING_OVERCLOCK, level);
 
     RG_LOGW("Overclock level %d applied: %dMhz", level, real_mhz);
 #else

@@ -158,6 +158,10 @@ static void lcd_set_backlight(float percent)
 
 #if defined(RG_GPIO_LCD_BCKL)
     error_code = ledc_set_fade_time_and_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0x1FFF * level, 50, 0);
+#elif defined(RG_I2C_GPIO_DRIVER) && (RG_I2C_GPIO_DRIVER == 6)
+    uint16_t val = (uint16_t)(level * 100);
+    if (!rg_i2c_write(RG_I2C_GPIO_ADDR, 0x12, &val, sizeof(val)))
+        error_code = -1;
 #endif
 
     if (error_code)

@@ -52,22 +52,30 @@ jobs:
         with:
           esp_idf_version: v5.5.1
           target: esp32s3
-          command: ./rg_tool.py --target fri3d-2024 build launcher retro-core prboom-go duke3d-go
+          command: ./rg_tool.py --target fri3d-2024 build all
       - name: Upload binaries to draft release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go}/build
+          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go,snes9x,gwenesis,fmsx,gbsp}/build
           mv launcher/build/launcher.bin retro_go_launcher_2024.bin
           mv retro-core/build/retro-core.bin retro_go_core_2024.bin
           mv prboom-go/build/prboom-go.bin retro_go_prboom_2024.bin
           mv duke3d-go/build/duke3d-go.bin retro_go_duke3d_2024.bin
+          mv snes9x/build/snes9x.bin retro_go_snes9x_2024.bin
+          mv gwenesis/build/gwenesis.bin retro_go_gwenesis_2024.bin
+          mv fmsx/build/fmsx.bin retro_go_fmsx_2024.bin
+          mv gbsp/build/gbsp.bin retro_go_gbsp_2024.bin
           gh release upload "${{ needs.prepare.outputs.tag }}" \
             "retro_go_launcher_2024.bin" \
             "retro_go_core_2024.bin" \
             "retro_go_prboom_2024.bin" \
-            "retro_go_duke3d_2024.bin"
+            "retro_go_duke3d_2024.bin" \
+            "retro_go_snes9x_2026.bin" \
+            "retro_go_gwenesis_2026.bin" \
+            "retro_go_fmsx_2026.bin" \
+            "retro_go_gbsp_2026.bin"
 
   build_2026:
     needs: [prepare]
@@ -85,19 +93,27 @@ jobs:
         with:
           esp_idf_version: v5.5.1
           target: esp32s3
-          command: ./rg_tool.py --target fri3d-2026 build launcher retro-core prboom-go duke3d-go
+          command: ./rg_tool.py --target fri3d-2026 build all
       - name: Upload binaries to draft release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go}/build
+          sudo chown -R $(whoami) {launcher,retro-core,prboom-go,duke3d-go,snes9x,gwenesis,fmsx,gbsp}/build
           mv launcher/build/launcher.bin retro_go_launcher_2026.bin
           mv retro-core/build/retro-core.bin retro_go_core_2026.bin
           mv prboom-go/build/prboom-go.bin retro_go_prboom_2026.bin
           mv duke3d-go/build/duke3d-go.bin retro_go_duke3d_2026.bin
+          mv snes9x/build/snes9x.bin retro_go_snes9x_2026.bin
+          mv gwenesis/build/gwenesis.bin retro_go_gwenesis_2026.bin
+          mv fmsx/build/fmsx.bin retro_go_fmsx_2026.bin
+          mv gbsp/build/gbsp.bin retro_go_gbsp_2026.bin
           gh release upload "${{ needs.prepare.outputs.tag }}" \
             "retro_go_launcher_2026.bin" \
             "retro_go_core_2026.bin" \
             "retro_go_prboom_2026.bin" \
-            "retro_go_duke3d_2026.bin"
+            "retro_go_duke3d_2026.bin" \
+            "retro_go_snes9x_2026.bin" \
+            "retro_go_gwenesis_2026.bin" \
+            "retro_go_fmsx_2026.bin" \
+            "retro_go_gbsp_2026.bin"

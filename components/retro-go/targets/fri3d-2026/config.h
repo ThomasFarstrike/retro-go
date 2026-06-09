@@ -113,12 +113,7 @@
 #define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
 #define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
 
-/*
-// Communicator Add-On offers external I2S DAC but retro-go doesn't support 2 external DACs yet
-#define RG_GPIO_SND_I2S_BCK         GPIO_NUM_2  // also known as SCLK
-#define RG_GPIO_SND_I2S_WS          GPIO_NUM_47 // also known as LRCK
-#define RG_GPIO_SND_I2S_DATA        GPIO_NUM_16
-*/
+// Communicator Add-On is on the same pins so also receives the audio
 
 // The 5 second sleep is convenient for debugging, but might be removed later:
 #define RG_CUSTOM_PLATFORM_INIT()   \

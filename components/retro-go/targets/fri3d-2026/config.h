@@ -115,10 +115,26 @@
 
 // Communicator Add-On is on the same pins so also receives the audio
 
+// Startup hack: holding START (GPIO_NUM_0) for 400ms swaps I2S MCK and BCK pins
+#ifdef RG_GPIO_SND_I2S_MCK
+extern bool rg_i2s_mck_bck_swap;
+#endif
+
 // The 5 second sleep is convenient for debugging, but might be removed later:
 #define RG_CUSTOM_PLATFORM_INIT()   \
     RG_LOGW("Waiting for CH32 coprocessor/expander to finish booting..."); \
     rg_task_delay(1000); \
+    do { \
+        gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT); \
+        gpio_set_pull_mode(GPIO_NUM_0, GPIO_PULLUP_ONLY); \
+        if (gpio_get_level(GPIO_NUM_0) == 0) { \
+            rg_task_delay(400); \
+            if (gpio_get_level(GPIO_NUM_0) == 0) { \
+                RG_LOGW("START held 400ms - swapping I2S MCK<->BCK pins!\n"); \
+                rg_i2s_mck_bck_swap = true; \
+            } \
+        } \
+    } while(0); \
     RG_LOGW("Allowing some time for serial debug console to connect..."); \
     rg_task_delay(5000); \
     RG_LOGW("Done waiting.");

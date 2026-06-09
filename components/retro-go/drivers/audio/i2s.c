@@ -33,6 +33,10 @@ static struct {
     bool muted;
 } state;
 
+#ifdef RG_GPIO_SND_I2S_MCK
+bool rg_i2s_mck_bck_swap = false;
+#endif
+
 static bool driver_init(int device, int sample_rate)
 {
     state.last_error = NULL;
@@ -79,11 +83,12 @@ static bool driver_init(int device, int sample_rate)
         {
             ret = i2s_set_pin(I2S_NUM_0, &(i2s_pin_config_t) {
             #ifdef RG_GPIO_SND_I2S_MCK
-                .mck_io_num = RG_GPIO_SND_I2S_MCK,
+                .mck_io_num = rg_i2s_mck_bck_swap ? RG_GPIO_SND_I2S_BCK : RG_GPIO_SND_I2S_MCK,
+                .bck_io_num = rg_i2s_mck_bck_swap ? RG_GPIO_SND_I2S_MCK : RG_GPIO_SND_I2S_BCK,
             #else
                 .mck_io_num = GPIO_NUM_NC,
-            #endif
                 .bck_io_num = RG_GPIO_SND_I2S_BCK,
+            #endif
                 .ws_io_num = RG_GPIO_SND_I2S_WS,
                 .data_out_num = RG_GPIO_SND_I2S_DATA,
                 .data_in_num = GPIO_NUM_NC

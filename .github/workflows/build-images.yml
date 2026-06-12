@@ -72,10 +72,10 @@ jobs:
             "retro_go_core_2024.bin" \
             "retro_go_prboom_2024.bin" \
             "retro_go_duke3d_2024.bin" \
-            "retro_go_snes9x_2026.bin" \
-            "retro_go_gwenesis_2026.bin" \
-            "retro_go_fmsx_2026.bin" \
-            "retro_go_gbsp_2026.bin"
+            "retro_go_snes9x_2024.bin" \
+            "retro_go_gwenesis_2024.bin" \
+            "retro_go_fmsx_2024.bin" \
+            "retro_go_gbsp_2024.bin"
 
   build_2026:
     needs: [prepare]

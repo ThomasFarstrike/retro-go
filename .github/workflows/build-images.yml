@@ -52,7 +52,7 @@ jobs:
         with:
           esp_idf_version: v5.5.1
           target: esp32s3
-          command: ./rg_tool.py --target fri3d-2024 build all
+          command: ./rg_tool.py --target fri3d-2024 build launcher retro-core prboom-go duke3d-go snes9x gwenesis fmsx gbsp
       - name: Upload binaries to draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -93,7 +93,7 @@ jobs:
         with:
           esp_idf_version: v5.5.1
           target: esp32s3
-          command: ./rg_tool.py --target fri3d-2026 build all
+          command: ./rg_tool.py --target fri3d-2026 build launcher retro-core prboom-go duke3d-go snes9x gwenesis fmsx gbsp
       - name: Upload binaries to draft release
         env:
           GH_TOKEN: ${{ github.token }}

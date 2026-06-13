@@ -3546,7 +3546,7 @@ else
                     break;
             }
 
-            menutext(c,43,SHX(-2),PHX(-2),"BRIGHTNESS");
+            menutext(c,43,SHX(-2),PHX(-2),"BACKLIGHT");
 
             if (retrogo_backlight_cached == -1)
             {

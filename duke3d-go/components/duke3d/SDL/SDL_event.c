@@ -44,14 +44,14 @@ IRAM_ATTR int SDL_PollEvent(SDL_Event * event)
             if (rg_state_snapshot & RG_KEY_START) {
                 if (start_press_time == 0) {
                     start_press_time = now;
-                } else if (!shift_active && (now - start_press_time > 750)) {
+                } else if (!shift_active && (now - start_press_time > 500)) {
                     shift_active = true;
                     strcpy(fta_quotes[26], "Hotkey Active");
                     FTA(26, &ps[myconnectindex], 1);
                 }
             } else {
                 if (start_press_time != 0) {
-                    if (!shift_active && (now - start_press_time < 750)) {
+                    if (!shift_active && (now - start_press_time < 500)) {
                         use_pulse_stage = 1;
                     }
                     start_press_time = 0;

@@ -23,7 +23,7 @@ This document outlines the gamepad mapping and the specialized hotkey system imp
 
 ---
 
-## Shift Mode (Hold START for 750ms)
+## Shift Mode (Hold START for 500ms)
 
 Holding the **START** button transforms the other gamepad controls into hotkeys. Movement is preserved during the initial hold to ensure smooth gameplay.
 
@@ -41,11 +41,11 @@ Holding the **START** button transforms the other gamepad controls into hotkeys.
 ## How the Hotkey System Works
 
 ### 1. Transparent Hold
-To ensure movement feels fluid, the game **does not stop** your current action the moment you press START. You can continue running or turning while preparing to use a hotkey. The controls only switch to their hotkey actions once the 750ms timer has expired and Shift Mode becomes active.
+To ensure movement feels fluid, the game **does not stop** your current action the moment you press START. You can continue running or turning while preparing to use a hotkey. The controls only switch to their hotkey actions once the 500ms timer has expired and Shift Mode becomes active.
 
 ### 2. Reliable "Sticky" Use (Short Press)
 Activating doors or switches in Duke3D requires the "Use" key to be held for at least one game tick. 
-- If you tap START and release it in **less than 750ms**, the system triggers a pulse.
+- If you tap START and release it in **less than 500ms**, the system triggers a pulse.
 - This pulse is **"Sticky"**: it automatically holds the Use action for **100ms** in the background. This ensures that every interaction is registered reliably by the game engine, even with very quick taps.
 
 ### 3. Input Snapshotting

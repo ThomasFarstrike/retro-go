@@ -1873,14 +1873,14 @@ void getinput(short snum)
 
     if (p->jetpack_on || (p->cursectnum >= 0 && (sector[p->cursectnum].lotag == 2 || sector[p->cursectnum].lotag == 1))) {
         // Active Swim/Fly state: Invert directions
-        // Crouch action (X button) -> Swim Up / Fly Up (Bit 0)
-        // Jump action (B button)   -> Swim Down / Fly Down (Bit 1)
+        // Crouch action -> Swim Up / Fly Up (Bit 0)
+        // Jump action -> Swim Down / Fly Down (Bit 1)
         loc.bits = crouch_pressed;
         loc.bits |= jump_pressed << 1;
     } else {
         // Standard state (Ground / Air Jump / Crouch-Jumping): Keep defaults
-        // Jump action (B button)   -> Jump (Bit 0)
-        // Crouch action (X button) -> Crouch (Bit 1)
+        // Jump action -> Jump (Bit 0)
+        // Crouch action -> Crouch (Bit 1)
         loc.bits = jump_pressed;
         loc.bits |= crouch_pressed << 1;
     }

@@ -115,10 +115,6 @@
 
 // Communicator Add-On is on the same pins so also receives the audio
 
-// The 5 second sleep is convenient for debugging, but might be removed later:
 #define RG_CUSTOM_PLATFORM_INIT()   \
     RG_LOGW("Waiting for CH32 coprocessor/expander to finish booting..."); \
-    rg_task_delay(1000); \
-    RG_LOGW("Allowing some time for serial debug console to connect..."); \
-    rg_task_delay(5000); \
-    RG_LOGW("Done waiting.");
+    rg_task_delay(1000);

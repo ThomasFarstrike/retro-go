@@ -135,6 +135,4 @@ extern bool rg_i2s_mck_bck_swap;
             } \
         } \
     } while(0); \
-    RG_LOGW("Allowing some time for serial debug console to connect..."); \
-    rg_task_delay(5000); \
-    RG_LOGW("Done waiting.");
+

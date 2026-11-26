@@ -21,3 +21,8 @@ build/
 /stdout.txt
 /gmon.out
 /*.exe
+
+# Local flash images and generated component locks
+/nvs*.bin*
+/otadata*.bin*
+/*/dependencies.lock
